@@ -73,10 +73,10 @@
     <Flowchart.Variables>
       <Variable x:TypeArguments="x:String" Name="servername" />
       <Variable x:TypeArguments="x:String" Name="token" />
-      <Variable x:TypeArguments="x:String" Name="output" />
+      <Variable x:TypeArguments="ui:GenericValue" Name="basedir" />
     </Flowchart.Variables>
     <Flowchart.StartNode>
-      <FlowStep x:Name="__ReferenceID1" sap2010:WorkflowViewState.IdRef="FlowStep_2">
+      <FlowStep x:Name="__ReferenceID0" sap2010:WorkflowViewState.IdRef="FlowStep_2">
         <Sequence DisplayName="認証Token取得" sap2010:WorkflowViewState.IdRef="Sequence_51">
           <Sequence.Variables>
             <Variable x:TypeArguments="njl:JObject" Name="authJson" />
@@ -97,7 +97,7 @@
                         <OutArgument x:TypeArguments="x:String">[authJsonStr]</OutArgument>
                       </ui:GetRobotAsset.Value>
                     </ui:GetRobotAsset>
-                    <ui:LogMessage DisplayName="Log message" sap2010:WorkflowViewState.IdRef="LogMessage_6" Level="Trace" Message="[authJsonStr]" />
+                    <ui:LogMessage DisplayName="Log message" sap2010:WorkflowViewState.IdRef="LogMessage_6" Level="Trace" Message="[&quot;from orch: &quot;+authJsonStr]" />
                   </Sequence>
                 </TryCatch.Try>
                 <TryCatch.Catches>
@@ -126,7 +126,7 @@
               <If.Else>
                 <Sequence sap2010:WorkflowViewState.IdRef="Sequence_57">
                   <ui:ReadTextFile sap2010:Annotation.AnnotationText="orchから取れない場合はファイルからとる" Content="[authJsonStr]" DisplayName="from text file" FileName="config/local.json" sap2010:WorkflowViewState.IdRef="ReadTextFile_3" />
-                  <ui:LogMessage DisplayName="Log message" sap2010:WorkflowViewState.IdRef="LogMessage_8" Level="Trace" Message="[authJsonStr]" />
+                  <ui:LogMessage DisplayName="Log message" sap2010:WorkflowViewState.IdRef="LogMessage_8" Level="Trace" Message="[&quot;from local: &quot;+authJsonStr]" />
                 </Sequence>
               </If.Else>
             </If>
@@ -137,6 +137,14 @@
               </Assign.To>
               <Assign.Value>
                 <InArgument x:TypeArguments="x:String">[authJson("serverinfo")("servername").ToString]</InArgument>
+              </Assign.Value>
+            </Assign>
+            <Assign sap2010:WorkflowViewState.IdRef="Assign_54">
+              <Assign.To>
+                <OutArgument x:TypeArguments="ui:GenericValue">[basedir]</OutArgument>
+              </Assign.To>
+              <Assign.Value>
+                <InArgument x:TypeArguments="ui:GenericValue">[authJson("clientinfo")("basedir").ToString]</InArgument>
               </Assign.Value>
             </Assign>
           </Sequence>
@@ -181,17 +189,18 @@
           </Sequence>
         </Sequence>
         <FlowStep.Next>
-          <FlowStep x:Name="__ReferenceID0" sap2010:WorkflowViewState.IdRef="FlowStep_1">
-            <Sequence DisplayName="ロボット利用状況 ダウンロード" sap2010:WorkflowViewState.IdRef="Sequence_45">
+          <FlowStep x:Name="__ReferenceID1" sap2010:WorkflowViewState.IdRef="FlowStep_6">
+            <Sequence DisplayName="Release ダウンロード" sap2010:WorkflowViewState.IdRef="Sequence_78">
               <Sequence.Variables>
-                <Variable x:TypeArguments="njl:JArray" Name="logs" />
+                <Variable x:TypeArguments="njl:JArray" Name="processes" />
+                <Variable x:TypeArguments="sd:DataTable" Name="outputDataTable" />
               </Sequence.Variables>
-              <Sequence DisplayName="サーバから、ログ取得" sap2010:WorkflowViewState.IdRef="Sequence_36">
+              <Sequence sap2010:Annotation.AnnotationText="パッケージ名とバージョンの一覧が必要なので、Process一覧をOrchから取得。" DisplayName="サーバから、Process一覧取得" sap2010:WorkflowViewState.IdRef="Sequence_72">
                 <Sequence.Variables>
-                  <Variable x:TypeArguments="x:String" Name="robotLogs" />
-                  <Variable x:TypeArguments="njl:JObject" Name="robotLogsObj" />
+                  <Variable x:TypeArguments="x:String" Name="processesStr" />
+                  <Variable x:TypeArguments="njl:JObject" Name="processesObj" />
                 </Sequence.Variables>
-                <ui:HttpClient Body="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" StatusCode="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" BodyFormat="application/xml" DisplayName="HTTP Request" EndPoint="[servername+ &quot;/odata/RobotLogs&quot;]" sap2010:WorkflowViewState.IdRef="HttpClient_4" Method="GET" Result="[robotLogs]" TimeoutMS="30000">
+                <ui:HttpClient Body="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" StatusCode="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" BodyFormat="application/xml" DisplayName="HTTP Request" EndPoint="[servername+ &quot;/odata/Releases&quot;]" sap2010:WorkflowViewState.IdRef="HttpClient_8" Method="GET" Result="[processesStr]" TimeoutMS="30000">
                   <ui:HttpClient.Attachments>
                     <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
                   </ui:HttpClient.Attachments>
@@ -199,60 +208,208 @@
                     <InArgument x:TypeArguments="x:String" x:Key="Authorization">["Bearer " + token]</InArgument>
                   </ui:HttpClient.Headers>
                   <ui:HttpClient.Parameters>
-                    <InArgument x:TypeArguments="x:String" x:Key="$filter">Level eq 'Info'</InArgument>
+                    <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
                   </ui:HttpClient.Parameters>
                   <ui:HttpClient.UrlSegments>
                     <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
                   </ui:HttpClient.UrlSegments>
                 </ui:HttpClient>
-                <ui:CommentOut DisplayName="Comment out" sap2010:WorkflowViewState.IdRef="CommentOut_1">
-                  <ui:CommentOut.Body>
-                    <Sequence DisplayName="Ignored Activities" sap2010:WorkflowViewState.IdRef="Sequence_55">
-                      <ui:WriteTextFile DisplayName="Write text file" FileName="robotLogs.json" sap2010:WorkflowViewState.IdRef="WriteTextFile_2" Text="[processesStr]" />
-                    </Sequence>
-                  </ui:CommentOut.Body>
-                </ui:CommentOut>
-                <ui:DeserializeJson x:TypeArguments="njl:JObject" DisplayName="Deserialize json" sap2010:WorkflowViewState.IdRef="DeserializeJson`1_9" JsonObject="[robotLogsObj]" JsonString="[robotLogs]" />
-                <ui:DeserializeJsonArray DisplayName="Deserialize json array" sap2010:WorkflowViewState.IdRef="DeserializeJsonArray_2" JsonArray="[logs]" JsonString="[robotLogsObj(&quot;value&quot;).ToString]" />
+                <ui:DeserializeJson x:TypeArguments="njl:JObject" DisplayName="Deserialize json" sap2010:WorkflowViewState.IdRef="DeserializeJson`1_14" JsonObject="[processesObj]" JsonString="[processesStr]" />
+                <ui:DeserializeJsonArray DisplayName="Deserialize json array" sap2010:WorkflowViewState.IdRef="DeserializeJsonArray_4" JsonArray="[processes]" JsonString="[processesObj(&quot;value&quot;).ToString]" />
+                <ui:LogMessage DisplayName="Log message" sap2010:WorkflowViewState.IdRef="LogMessage_10" Level="Info" Message="[&quot;processes数: &quot;+processes.Count.ToString]" />
               </Sequence>
-              <Sequence DisplayName="Excel 出力処理" sap2010:WorkflowViewState.IdRef="Sequence_44">
+              <ui:GenerateDataTable ColumnSizes="{x:Null}" NewLineSeparator="{x:Null}" Positions="{x:Null}" sap2010:Annotation.AnnotationText="指定した列項目をもった、DataTableを定義する。" AutoDetectTypes="False" ColumnSeparators="," DataTable="[outputDataTable]" DisplayName="Generate Data Table" sap2010:WorkflowViewState.IdRef="GenerateDataTable_4" Input="PackageName,Version,ProcessName" UseColumnHeader="True" />
+              <Sequence DisplayName="プロセス一つ一つ、JSON→ 行データ化" sap2010:WorkflowViewState.IdRef="Sequence_74">
                 <Sequence.Variables>
-                  <Variable x:TypeArguments="sd:DataTable" Name="outputDataTable" />
-                  <Variable x:TypeArguments="x:String" Default="c:\temp\output.xlsx" Name="outputPath" />
+                  <Variable x:TypeArguments="ui:GenericValue" Name="packageName" />
+                  <Variable x:TypeArguments="ui:GenericValue" Name="version" />
                 </Sequence.Variables>
-                <ui:GenerateDataTable ColumnSizes="{x:Null}" NewLineSeparator="{x:Null}" Positions="{x:Null}" sap2010:Annotation.AnnotationText="指定した列項目をもった、DataTableを定義する。" AutoDetectTypes="False" ColumnSeparators="," DataTable="[outputDataTable]" DisplayName="Generate Data Table" sap2010:WorkflowViewState.IdRef="GenerateDataTable_3" Input="タイムスタンプ,日付,時刻,JobID,ログレベル,Windowsアカウント,ロボ名,プロセス名,実行時間(秒),メッセージ,ログ種別" UseColumnHeader="True" />
-                <ui:ForEach x:TypeArguments="njl:JObject" DisplayName="For each" sap2010:WorkflowViewState.IdRef="ForEach`1_4" Values="[logs]">
+                <ui:ForEach x:TypeArguments="njl:JObject" DisplayName="For each" sap2010:WorkflowViewState.IdRef="ForEach`1_6" Values="[processes]">
                   <ui:ForEach.Body>
                     <ActivityAction x:TypeArguments="njl:JObject">
                       <ActivityAction.Argument>
                         <DelegateInArgument x:TypeArguments="njl:JObject" Name="item" />
                       </ActivityAction.Argument>
-                      <Sequence DisplayName="for sequence" sap2010:WorkflowViewState.IdRef="Sequence_41">
+                      <Sequence sap2010:Annotation.AnnotationText="パッケージ名とバージョンから、プロセス名をRowデータに変換" DisplayName="for sequence" sap2010:WorkflowViewState.IdRef="Sequence_73">
                         <Sequence.Variables>
                           <Variable x:TypeArguments="ui:GenericValue" Name="totalExecutionTimeInSeconds" />
                           <Variable x:TypeArguments="njl:JObject" Name="rawMessage" />
+                          <Variable x:TypeArguments="ui:GenericValue" Name="processName" />
                         </Sequence.Variables>
-                        <Sequence DisplayName="rawMessage 取得処理" sap2010:WorkflowViewState.IdRef="Sequence_37">
-                          <Sequence.Variables>
-                            <Variable x:TypeArguments="x:String" Name="rawMessageStr" />
-                          </Sequence.Variables>
-                          <Assign sap2010:WorkflowViewState.IdRef="Assign_39">
-                            <Assign.To>
-                              <OutArgument x:TypeArguments="x:String">[rawMessageStr]</OutArgument>
-                            </Assign.To>
-                            <Assign.Value>
-                              <InArgument x:TypeArguments="x:String">[item("RawMessage").ToString]</InArgument>
-                            </Assign.Value>
-                          </Assign>
-                          <ui:DeserializeJson x:TypeArguments="njl:JObject" DisplayName="Deserialize json" sap2010:WorkflowViewState.IdRef="DeserializeJson`1_10" JsonObject="[rawMessage]" JsonString="[rawMessageStr]" />
-                        </Sequence>
-                        <If Condition="[rawMessage(&quot;totalExecutionTimeInSeconds&quot;) isnot  Nothing]" DisplayName="If totalExecutionTimeInSeconds があったら終了ログとして追加" sap2010:WorkflowViewState.IdRef="If_11">
+                        <ui:LogMessage DisplayName="Log message" sap2010:WorkflowViewState.IdRef="LogMessage_9" Level="Info" Message="[item.ToString]" />
+                        <Assign sap2010:WorkflowViewState.IdRef="Assign_51">
+                          <Assign.To>
+                            <OutArgument x:TypeArguments="ui:GenericValue">[packageName]</OutArgument>
+                          </Assign.To>
+                          <Assign.Value>
+                            <InArgument x:TypeArguments="ui:GenericValue">[item("ProcessKey").ToString]</InArgument>
+                          </Assign.Value>
+                        </Assign>
+                        <Assign sap2010:WorkflowViewState.IdRef="Assign_52">
+                          <Assign.To>
+                            <OutArgument x:TypeArguments="ui:GenericValue">[version]</OutArgument>
+                          </Assign.To>
+                          <Assign.Value>
+                            <InArgument x:TypeArguments="ui:GenericValue">[item("ProcessVersion").ToString]</InArgument>
+                          </Assign.Value>
+                        </Assign>
+                        <Assign sap2010:WorkflowViewState.IdRef="Assign_53">
+                          <Assign.To>
+                            <OutArgument x:TypeArguments="ui:GenericValue">[processName]</OutArgument>
+                          </Assign.To>
+                          <Assign.Value>
+                            <InArgument x:TypeArguments="ui:GenericValue">[item("Name").ToString]</InArgument>
+                          </Assign.Value>
+                        </Assign>
+                        <ui:AddDataRow DataRow="{x:Null}" ArrayRow="[{packageName,version,processName}]" DataTable="[outputDataTable]" DisplayName="Add data row" sap2010:WorkflowViewState.IdRef="AddDataRow_6" />
+                      </Sequence>
+                    </ActivityAction>
+                  </ui:ForEach.Body>
+                </ui:ForEach>
+              </Sequence>
+              <Sequence DisplayName="Excel出力" sap2010:WorkflowViewState.IdRef="Sequence_77">
+                <Sequence.Variables>
+                  <Variable x:TypeArguments="x:String" Default="releases.xlsx" Name="outputFile" />
+                </Sequence.Variables>
+                <Sequence DisplayName="出力ファイルが存在するなら削除" sap2010:WorkflowViewState.IdRef="Sequence_75">
+                  <Sequence.Variables>
+                    <Variable x:TypeArguments="x:Boolean" Name="outputFileExists" />
+                  </Sequence.Variables>
+                  <ui:PathExists DisplayName="Path exists" Exists="[outputFileExists]" sap2010:WorkflowViewState.IdRef="PathExists_3" Path="[basedir+&quot;/&quot;+outputFile]" PathType="File" />
+                  <If Condition="[outputFileExists]" sap2010:WorkflowViewState.IdRef="If_15">
+                    <If.Then>
+                      <ui:Delete ContinueOnError="{x:Null}" sap2010:WorkflowViewState.IdRef="Delete_3" Path="[basedir+&quot;/&quot;+outputFile]" />
+                    </If.Then>
+                  </If>
+                </Sequence>
+                <ui:ExcelApplicationScope Password="{x:Null}" DisplayName="Excel application scope" sap2010:WorkflowViewState.IdRef="ExcelApplicationScope_3" WorkbookPath="[basedir+&quot;/&quot;+outputFile]">
+                  <ui:ExcelApplicationScope.Body>
+                    <ActivityAction x:TypeArguments="ui:WorkbookApplication">
+                      <ActivityAction.Argument>
+                        <DelegateInArgument x:TypeArguments="ui:WorkbookApplication" Name="ExcelWorkbookScope" />
+                      </ActivityAction.Argument>
+                      <Sequence DisplayName="Do" sap2010:WorkflowViewState.IdRef="Sequence_76">
+                        <ui:ExcelWriteRange AddHeaders="True" DataTable="[outputDataTable]" DisplayName="Write Range" sap2010:WorkflowViewState.IdRef="ExcelWriteRange_3" SheetName="Sheet1" StartingCell="A1" />
+                      </Sequence>
+                    </ActivityAction>
+                  </ui:ExcelApplicationScope.Body>
+                </ui:ExcelApplicationScope>
+              </Sequence>
+            </Sequence>
+          </FlowStep>
+        </FlowStep.Next>
+      </FlowStep>
+    </Flowchart.StartNode>
+    <FlowStep sap2010:WorkflowViewState.IdRef="FlowStep_1">
+      <Sequence DisplayName="ロボット利用状況 ダウンロード" sap2010:WorkflowViewState.IdRef="Sequence_45">
+        <Sequence.Variables>
+          <Variable x:TypeArguments="njl:JArray" Name="logs" />
+        </Sequence.Variables>
+        <Sequence DisplayName="サーバから、ログ取得" sap2010:WorkflowViewState.IdRef="Sequence_36">
+          <Sequence.Variables>
+            <Variable x:TypeArguments="x:String" Name="robotLogs" />
+            <Variable x:TypeArguments="njl:JObject" Name="robotLogsObj" />
+          </Sequence.Variables>
+          <ui:HttpClient Body="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" StatusCode="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" BodyFormat="application/xml" DisplayName="HTTP Request" EndPoint="[servername+ &quot;/odata/RobotLogs&quot;]" sap2010:WorkflowViewState.IdRef="HttpClient_4" Method="GET" Result="[robotLogs]" TimeoutMS="30000">
+            <ui:HttpClient.Attachments>
+              <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+            </ui:HttpClient.Attachments>
+            <ui:HttpClient.Headers>
+              <InArgument x:TypeArguments="x:String" x:Key="Authorization">["Bearer " + token]</InArgument>
+            </ui:HttpClient.Headers>
+            <ui:HttpClient.Parameters>
+              <InArgument x:TypeArguments="x:String" x:Key="$filter">Level eq 'Info'</InArgument>
+            </ui:HttpClient.Parameters>
+            <ui:HttpClient.UrlSegments>
+              <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+            </ui:HttpClient.UrlSegments>
+          </ui:HttpClient>
+          <ui:CommentOut DisplayName="Comment out" sap2010:WorkflowViewState.IdRef="CommentOut_1">
+            <ui:CommentOut.Body>
+              <Sequence DisplayName="Ignored Activities" sap2010:WorkflowViewState.IdRef="Sequence_55">
+                <ui:WriteTextFile DisplayName="Write text file" FileName="robotLogs.json" sap2010:WorkflowViewState.IdRef="WriteTextFile_2" Text="[processesStr]" />
+              </Sequence>
+            </ui:CommentOut.Body>
+          </ui:CommentOut>
+          <ui:DeserializeJson x:TypeArguments="njl:JObject" DisplayName="Deserialize json" sap2010:WorkflowViewState.IdRef="DeserializeJson`1_9" JsonObject="[robotLogsObj]" JsonString="[robotLogs]" />
+          <ui:DeserializeJsonArray DisplayName="Deserialize json array" sap2010:WorkflowViewState.IdRef="DeserializeJsonArray_2" JsonArray="[logs]" JsonString="[robotLogsObj(&quot;value&quot;).ToString]" />
+        </Sequence>
+        <Sequence DisplayName="Excel 出力処理" sap2010:WorkflowViewState.IdRef="Sequence_44">
+          <Sequence.Variables>
+            <Variable x:TypeArguments="sd:DataTable" Name="outputDataTable" />
+            <Variable x:TypeArguments="x:String" Default="output.xlsx" Name="outputFile" />
+          </Sequence.Variables>
+          <ui:GenerateDataTable ColumnSizes="{x:Null}" NewLineSeparator="{x:Null}" Positions="{x:Null}" sap2010:Annotation.AnnotationText="指定した列項目をもった、DataTableを定義する。" AutoDetectTypes="False" ColumnSeparators="," DataTable="[outputDataTable]" DisplayName="Generate Data Table" sap2010:WorkflowViewState.IdRef="GenerateDataTable_3" Input="タイムスタンプ,日付,時刻,JobID,ログレベル,Windowsアカウント,ロボ名,プロセス名,実行時間(秒),メッセージ,ログ種別" UseColumnHeader="True" />
+          <ui:ForEach x:TypeArguments="njl:JObject" DisplayName="For each" sap2010:WorkflowViewState.IdRef="ForEach`1_4" Values="[logs]">
+            <ui:ForEach.Body>
+              <ActivityAction x:TypeArguments="njl:JObject">
+                <ActivityAction.Argument>
+                  <DelegateInArgument x:TypeArguments="njl:JObject" Name="item" />
+                </ActivityAction.Argument>
+                <Sequence DisplayName="for sequence" sap2010:WorkflowViewState.IdRef="Sequence_41">
+                  <Sequence.Variables>
+                    <Variable x:TypeArguments="ui:GenericValue" Name="totalExecutionTimeInSeconds" />
+                    <Variable x:TypeArguments="njl:JObject" Name="rawMessage" />
+                  </Sequence.Variables>
+                  <Sequence DisplayName="rawMessage 取得処理" sap2010:WorkflowViewState.IdRef="Sequence_37">
+                    <Sequence.Variables>
+                      <Variable x:TypeArguments="x:String" Name="rawMessageStr" />
+                    </Sequence.Variables>
+                    <Assign sap2010:WorkflowViewState.IdRef="Assign_39">
+                      <Assign.To>
+                        <OutArgument x:TypeArguments="x:String">[rawMessageStr]</OutArgument>
+                      </Assign.To>
+                      <Assign.Value>
+                        <InArgument x:TypeArguments="x:String">[item("RawMessage").ToString]</InArgument>
+                      </Assign.Value>
+                    </Assign>
+                    <ui:DeserializeJson x:TypeArguments="njl:JObject" DisplayName="Deserialize json" sap2010:WorkflowViewState.IdRef="DeserializeJson`1_10" JsonObject="[rawMessage]" JsonString="[rawMessageStr]" />
+                  </Sequence>
+                  <If Condition="[rawMessage(&quot;totalExecutionTimeInSeconds&quot;) isnot  Nothing]" DisplayName="If totalExecutionTimeInSeconds があったら終了ログとして追加" sap2010:WorkflowViewState.IdRef="If_11">
+                    <If.Then>
+                      <Sequence DisplayName="行追加処理" sap2010:WorkflowViewState.IdRef="Sequence_38">
+                        <Sequence.Variables>
+                          <Variable x:TypeArguments="s:DateTime" Name="logDate" />
+                        </Sequence.Variables>
+                        <Assign sap2010:WorkflowViewState.IdRef="Assign_40">
+                          <Assign.To>
+                            <OutArgument x:TypeArguments="s:DateTime">[logDate]</OutArgument>
+                          </Assign.To>
+                          <Assign.Value>
+                            <InArgument x:TypeArguments="s:DateTime">[Convert.ToDateTime(item("TimeStamp")).ToLocalTime]</InArgument>
+                          </Assign.Value>
+                        </Assign>
+                        <Assign sap2010:WorkflowViewState.IdRef="Assign_41">
+                          <Assign.To>
+                            <OutArgument x:TypeArguments="ui:GenericValue">[totalExecutionTimeInSeconds]</OutArgument>
+                          </Assign.To>
+                          <Assign.Value>
+                            <InArgument x:TypeArguments="ui:GenericValue">[rawMessage("totalExecutionTimeInSeconds").ToString]</InArgument>
+                          </Assign.Value>
+                        </Assign>
+                        <ui:AddDataRow DataRow="{x:Null}" ArrayRow="[{logDate.ToString,logDate.ToString(&quot;yyyy/MM/dd&quot;),logDate.ToString(&quot;HH:mm:ss&quot;),item(&quot;JobKey&quot;).ToString,item(&quot;Level&quot;).ToString,item(&quot;WindowsIdentity&quot;).ToString,item(&quot;RobotName&quot;).ToString,item(&quot;ProcessName&quot;).ToString,totalExecutionTimeInSeconds,item(&quot;Message&quot;).ToString,&quot;終了&quot;}]" DataTable="[outputDataTable]" DisplayName="Add data row" sap2010:WorkflowViewState.IdRef="AddDataRow_4" />
+                      </Sequence>
+                    </If.Then>
+                    <If.Else>
+                      <Sequence DisplayName="行追加処理" sap2010:WorkflowViewState.IdRef="Sequence_40">
+                        <Sequence.Variables>
+                          <Variable x:TypeArguments="x:Boolean" Name="isMatchStart" />
+                        </Sequence.Variables>
+                        <Assign sap2010:WorkflowViewState.IdRef="Assign_42">
+                          <Assign.To>
+                            <OutArgument x:TypeArguments="x:Boolean">[isMatchStart]</OutArgument>
+                          </Assign.To>
+                          <Assign.Value>
+                            <InArgument x:TypeArguments="x:Boolean">[item("Message").ToString.EndsWith("execution started")]</InArgument>
+                          </Assign.Value>
+                        </Assign>
+                        <If Condition="[isMatchStart]" DisplayName="If Messageが execution started  で終了するなら、開始ログとして追加。" sap2010:WorkflowViewState.IdRef="If_10">
                           <If.Then>
-                            <Sequence DisplayName="行追加処理" sap2010:WorkflowViewState.IdRef="Sequence_38">
+                            <Sequence sap2010:WorkflowViewState.IdRef="Sequence_39">
                               <Sequence.Variables>
                                 <Variable x:TypeArguments="s:DateTime" Name="logDate" />
                               </Sequence.Variables>
-                              <Assign sap2010:WorkflowViewState.IdRef="Assign_40">
+                              <Assign sap2010:WorkflowViewState.IdRef="Assign_43">
                                 <Assign.To>
                                   <OutArgument x:TypeArguments="s:DateTime">[logDate]</OutArgument>
                                 </Assign.To>
@@ -260,199 +417,151 @@
                                   <InArgument x:TypeArguments="s:DateTime">[Convert.ToDateTime(item("TimeStamp")).ToLocalTime]</InArgument>
                                 </Assign.Value>
                               </Assign>
-                              <Assign sap2010:WorkflowViewState.IdRef="Assign_41">
+                              <Assign sap2010:WorkflowViewState.IdRef="Assign_44">
                                 <Assign.To>
                                   <OutArgument x:TypeArguments="ui:GenericValue">[totalExecutionTimeInSeconds]</OutArgument>
                                 </Assign.To>
                                 <Assign.Value>
-                                  <InArgument x:TypeArguments="ui:GenericValue">[rawMessage("totalExecutionTimeInSeconds").ToString]</InArgument>
+                                  <InArgument x:TypeArguments="ui:GenericValue">["0"]</InArgument>
                                 </Assign.Value>
                               </Assign>
-                              <ui:AddDataRow DataRow="{x:Null}" ArrayRow="[{logDate.ToString,logDate.ToString(&quot;yyyy/MM/dd&quot;),logDate.ToString(&quot;HH:mm:ss&quot;),item(&quot;JobKey&quot;).ToString,item(&quot;Level&quot;).ToString,item(&quot;WindowsIdentity&quot;).ToString,item(&quot;RobotName&quot;).ToString,item(&quot;ProcessName&quot;).ToString,totalExecutionTimeInSeconds,item(&quot;Message&quot;).ToString,&quot;終了&quot;}]" DataTable="[outputDataTable]" DisplayName="Add data row" sap2010:WorkflowViewState.IdRef="AddDataRow_4" />
+                              <ui:AddDataRow DataRow="{x:Null}" ArrayRow="[{logDate.ToString,logDate.ToString(&quot;yyyy/MM/dd&quot;),logDate.ToString(&quot;HH:mm:ss&quot;),item(&quot;JobKey&quot;).ToString,item(&quot;Level&quot;).ToString,item(&quot;WindowsIdentity&quot;).ToString,item(&quot;RobotName&quot;).ToString,item(&quot;ProcessName&quot;).ToString,totalExecutionTimeInSeconds,item(&quot;Message&quot;).ToString,&quot;開始&quot;}]" DataTable="[outputDataTable]" DisplayName="Add data row" sap2010:WorkflowViewState.IdRef="AddDataRow_5" />
                             </Sequence>
                           </If.Then>
-                          <If.Else>
-                            <Sequence DisplayName="行追加処理" sap2010:WorkflowViewState.IdRef="Sequence_40">
-                              <Sequence.Variables>
-                                <Variable x:TypeArguments="x:Boolean" Name="isMatchStart" />
-                              </Sequence.Variables>
-                              <Assign sap2010:WorkflowViewState.IdRef="Assign_42">
-                                <Assign.To>
-                                  <OutArgument x:TypeArguments="x:Boolean">[isMatchStart]</OutArgument>
-                                </Assign.To>
-                                <Assign.Value>
-                                  <InArgument x:TypeArguments="x:Boolean">[item("Message").ToString.EndsWith("execution started")]</InArgument>
-                                </Assign.Value>
-                              </Assign>
-                              <If Condition="[isMatchStart]" DisplayName="If Messageが execution started  で終了するなら、開始ログとして追加。" sap2010:WorkflowViewState.IdRef="If_10">
-                                <If.Then>
-                                  <Sequence sap2010:WorkflowViewState.IdRef="Sequence_39">
-                                    <Sequence.Variables>
-                                      <Variable x:TypeArguments="s:DateTime" Name="logDate" />
-                                    </Sequence.Variables>
-                                    <Assign sap2010:WorkflowViewState.IdRef="Assign_43">
-                                      <Assign.To>
-                                        <OutArgument x:TypeArguments="s:DateTime">[logDate]</OutArgument>
-                                      </Assign.To>
-                                      <Assign.Value>
-                                        <InArgument x:TypeArguments="s:DateTime">[Convert.ToDateTime(item("TimeStamp")).ToLocalTime]</InArgument>
-                                      </Assign.Value>
-                                    </Assign>
-                                    <Assign sap2010:WorkflowViewState.IdRef="Assign_44">
-                                      <Assign.To>
-                                        <OutArgument x:TypeArguments="ui:GenericValue">[totalExecutionTimeInSeconds]</OutArgument>
-                                      </Assign.To>
-                                      <Assign.Value>
-                                        <InArgument x:TypeArguments="ui:GenericValue">["0"]</InArgument>
-                                      </Assign.Value>
-                                    </Assign>
-                                    <ui:AddDataRow DataRow="{x:Null}" ArrayRow="[{logDate.ToString,logDate.ToString(&quot;yyyy/MM/dd&quot;),logDate.ToString(&quot;HH:mm:ss&quot;),item(&quot;JobKey&quot;).ToString,item(&quot;Level&quot;).ToString,item(&quot;WindowsIdentity&quot;).ToString,item(&quot;RobotName&quot;).ToString,item(&quot;ProcessName&quot;).ToString,totalExecutionTimeInSeconds,item(&quot;Message&quot;).ToString,&quot;開始&quot;}]" DataTable="[outputDataTable]" DisplayName="Add data row" sap2010:WorkflowViewState.IdRef="AddDataRow_5" />
-                                  </Sequence>
-                                </If.Then>
-                              </If>
-                            </Sequence>
-                          </If.Else>
                         </If>
                       </Sequence>
-                    </ActivityAction>
-                  </ui:ForEach.Body>
-                </ui:ForEach>
-                <Sequence DisplayName="Excel出力" sap2010:WorkflowViewState.IdRef="Sequence_53">
-                  <Sequence DisplayName="出力ファイルが存在するなら削除" sap2010:WorkflowViewState.IdRef="Sequence_42">
-                    <Sequence.Variables>
-                      <Variable x:TypeArguments="x:Boolean" Name="outputFileExists" />
-                    </Sequence.Variables>
-                    <ui:PathExists DisplayName="Path exists" Exists="[outputFileExists]" sap2010:WorkflowViewState.IdRef="PathExists_2" Path="[outputPath]" PathType="File" />
-                    <If Condition="[outputFileExists]" sap2010:WorkflowViewState.IdRef="If_12">
-                      <If.Then>
-                        <ui:Delete ContinueOnError="{x:Null}" sap2010:WorkflowViewState.IdRef="Delete_2" Path="c:\temp\output.xlsx" />
-                      </If.Then>
-                    </If>
-                  </Sequence>
-                  <ui:ExcelApplicationScope Password="{x:Null}" DisplayName="Excel application scope" sap2010:WorkflowViewState.IdRef="ExcelApplicationScope_2" WorkbookPath="[outputPath]">
-                    <ui:ExcelApplicationScope.Body>
-                      <ActivityAction x:TypeArguments="ui:WorkbookApplication">
-                        <ActivityAction.Argument>
-                          <DelegateInArgument x:TypeArguments="ui:WorkbookApplication" Name="ExcelWorkbookScope" />
-                        </ActivityAction.Argument>
-                        <Sequence DisplayName="Do" sap2010:WorkflowViewState.IdRef="Sequence_43">
-                          <ui:ExcelWriteRange AddHeaders="True" DataTable="[outputDataTable]" DisplayName="Write Range" sap2010:WorkflowViewState.IdRef="ExcelWriteRange_2" SheetName="Sheet1" StartingCell="A1" />
-                        </Sequence>
-                      </ActivityAction>
-                    </ui:ExcelApplicationScope.Body>
-                  </ui:ExcelApplicationScope>
+                    </If.Else>
+                  </If>
                 </Sequence>
-              </Sequence>
+              </ActivityAction>
+            </ui:ForEach.Body>
+          </ui:ForEach>
+          <Sequence DisplayName="Excel出力" sap2010:WorkflowViewState.IdRef="Sequence_53">
+            <Sequence DisplayName="出力ファイルが存在するなら削除" sap2010:WorkflowViewState.IdRef="Sequence_42">
+              <Sequence.Variables>
+                <Variable x:TypeArguments="x:Boolean" Name="outputFileExists" />
+              </Sequence.Variables>
+              <ui:PathExists DisplayName="Path exists" Exists="[outputFileExists]" sap2010:WorkflowViewState.IdRef="PathExists_2" Path="[basedir+&quot;/&quot;+outputFile]" PathType="File" />
+              <If Condition="[outputFileExists]" sap2010:WorkflowViewState.IdRef="If_12">
+                <If.Then>
+                  <ui:Delete ContinueOnError="{x:Null}" sap2010:WorkflowViewState.IdRef="Delete_2" Path="[basedir+&quot;/&quot;+outputFile]" />
+                </If.Then>
+              </If>
             </Sequence>
-            <FlowStep.Next>
-              <FlowStep x:Name="__ReferenceID2" sap2010:WorkflowViewState.IdRef="FlowStep_5">
-                <Sequence DisplayName="nupkgダウンロード" sap2010:WorkflowViewState.IdRef="Sequence_52">
-                  <Sequence.Variables>
-                    <Variable x:TypeArguments="njl:JArray" Name="processes" />
-                    <Variable x:TypeArguments="x:String" Name="variable1" />
-                  </Sequence.Variables>
-                  <Sequence sap2010:Annotation.AnnotationText="パッケージ名とバージョンの一覧が必要なので、Process一覧をOrchから取得。" DisplayName="サーバから、Process一覧取得" sap2010:WorkflowViewState.IdRef="Sequence_54">
-                    <Sequence.Variables>
-                      <Variable x:TypeArguments="x:String" Name="processesStr" />
-                      <Variable x:TypeArguments="njl:JObject" Name="processesObj" />
-                    </Sequence.Variables>
-                    <ui:HttpClient Body="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" StatusCode="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" BodyFormat="application/xml" DisplayName="HTTP Request" EndPoint="[servername+ &quot;/odata/Releases&quot;]" sap2010:WorkflowViewState.IdRef="HttpClient_6" Method="GET" Result="[processesStr]" TimeoutMS="30000">
-                      <ui:HttpClient.Attachments>
-                        <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
-                      </ui:HttpClient.Attachments>
-                      <ui:HttpClient.Headers>
-                        <InArgument x:TypeArguments="x:String" x:Key="Authorization">["Bearer " + token]</InArgument>
-                      </ui:HttpClient.Headers>
-                      <ui:HttpClient.Parameters>
-                        <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
-                      </ui:HttpClient.Parameters>
-                      <ui:HttpClient.UrlSegments>
-                        <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
-                      </ui:HttpClient.UrlSegments>
-                    </ui:HttpClient>
-                    <ui:DeserializeJson x:TypeArguments="njl:JObject" DisplayName="Deserialize json" sap2010:WorkflowViewState.IdRef="DeserializeJson`1_13" JsonObject="[processesObj]" JsonString="[processesStr]" />
-                    <ui:DeserializeJsonArray DisplayName="Deserialize json array" sap2010:WorkflowViewState.IdRef="DeserializeJsonArray_3" JsonArray="[processes]" JsonString="[processesObj(&quot;value&quot;).ToString]" />
+            <ui:ExcelApplicationScope Password="{x:Null}" DisplayName="Excel application scope" sap2010:WorkflowViewState.IdRef="ExcelApplicationScope_2" WorkbookPath="[basedir+&quot;/&quot;+outputFile]">
+              <ui:ExcelApplicationScope.Body>
+                <ActivityAction x:TypeArguments="ui:WorkbookApplication">
+                  <ActivityAction.Argument>
+                    <DelegateInArgument x:TypeArguments="ui:WorkbookApplication" Name="ExcelWorkbookScope" />
+                  </ActivityAction.Argument>
+                  <Sequence DisplayName="Do" sap2010:WorkflowViewState.IdRef="Sequence_43">
+                    <ui:ExcelWriteRange AddHeaders="True" DataTable="[outputDataTable]" DisplayName="Write Range" sap2010:WorkflowViewState.IdRef="ExcelWriteRange_2" SheetName="Sheet1" StartingCell="A1" />
                   </Sequence>
-                  <Sequence DisplayName="プロセス一つ一つ、ダウンロードする処理" sap2010:WorkflowViewState.IdRef="Sequence_66">
-                    <Sequence.Variables>
-                      <Variable x:TypeArguments="sd:DataTable" Name="outputDataTable" />
-                      <Variable x:TypeArguments="x:String" Default="c:\temp\output.xlsx" Name="outputPath" />
-                      <Variable x:TypeArguments="sd:DataTable" Name="processesTable" />
-                      <Variable x:TypeArguments="x:String" Name="temp" />
-                      <Variable x:TypeArguments="ui:GenericValue" Name="packageName" />
-                      <Variable x:TypeArguments="ui:GenericValue" Name="version" />
-                    </Sequence.Variables>
-                    <ui:ForEach x:TypeArguments="njl:JObject" DisplayName="For each" sap2010:WorkflowViewState.IdRef="ForEach`1_5" Values="[processes]">
-                      <ui:ForEach.Body>
-                        <ActivityAction x:TypeArguments="njl:JObject">
-                          <ActivityAction.Argument>
-                            <DelegateInArgument x:TypeArguments="njl:JObject" Name="item" />
-                          </ActivityAction.Argument>
-                          <Sequence sap2010:Annotation.AnnotationText="パッケージ名とバージョンからURLを生成し、そこにアクセスして、データをダウンロード。" DisplayName="for sequence" sap2010:WorkflowViewState.IdRef="Sequence_62">
-                            <Sequence.Variables>
-                              <Variable x:TypeArguments="ui:GenericValue" Name="totalExecutionTimeInSeconds" />
-                              <Variable x:TypeArguments="njl:JObject" Name="rawMessage" />
-                            </Sequence.Variables>
-                            <Assign sap2010:WorkflowViewState.IdRef="Assign_48">
-                              <Assign.To>
-                                <OutArgument x:TypeArguments="ui:GenericValue">[packageName]</OutArgument>
-                              </Assign.To>
-                              <Assign.Value>
-                                <InArgument x:TypeArguments="ui:GenericValue">[item("ProcessKey").ToString]</InArgument>
-                              </Assign.Value>
-                            </Assign>
-                            <ui:CommentOut DisplayName="encodeはいらないっぽい" sap2010:WorkflowViewState.IdRef="CommentOut_7">
-                              <ui:CommentOut.Body>
-                                <Sequence DisplayName="Ignored Activities" sap2010:WorkflowViewState.IdRef="Sequence_71">
-                                  <Assign sap2010:WorkflowViewState.IdRef="Assign_50">
-                                    <Assign.To>
-                                      <OutArgument x:TypeArguments="ui:GenericValue">[packageName]</OutArgument>
-                                    </Assign.To>
-                                    <Assign.Value>
-                                      <InArgument x:TypeArguments="ui:GenericValue">[system.Web.HttpUtility.htmldecode(packageName)]</InArgument>
-                                    </Assign.Value>
-                                  </Assign>
-                                </Sequence>
-                              </ui:CommentOut.Body>
-                            </ui:CommentOut>
-                            <Assign sap2010:WorkflowViewState.IdRef="Assign_49">
-                              <Assign.To>
-                                <OutArgument x:TypeArguments="ui:GenericValue">[version]</OutArgument>
-                              </Assign.To>
-                              <Assign.Value>
-                                <InArgument x:TypeArguments="ui:GenericValue">[item("ProcessVersion").ToString]</InArgument>
-                              </Assign.Value>
-                            </Assign>
-                            <ui:HttpClient Body="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" Result="{x:Null}" StatusCode="{x:Null}" Username="{x:Null}" AcceptFormat="ANY" BodyFormat="application/xml" DisplayName="HTTP Request" EndPoint="[servername+ &quot;/nuget/Feed/default/Packages(Id='&quot; + packageName +  &quot;',Version='&quot; + version +   &quot;')/Download&quot;]" sap2010:WorkflowViewState.IdRef="HttpClient_7" Method="GET" ResourcePath="[packageName+&quot;.&quot;+version+&quot;.nupkg&quot;]" TimeoutMS="6000">
-                              <ui:HttpClient.Attachments>
-                                <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
-                              </ui:HttpClient.Attachments>
-                              <ui:HttpClient.Headers>
-                                <InArgument x:TypeArguments="x:String" x:Key="Authorization">["Bearer " + token]</InArgument>
-                              </ui:HttpClient.Headers>
-                              <ui:HttpClient.Parameters>
-                                <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
-                              </ui:HttpClient.Parameters>
-                              <ui:HttpClient.UrlSegments>
-                                <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
-                              </ui:HttpClient.UrlSegments>
-                            </ui:HttpClient>
-                          </Sequence>
-                        </ActivityAction>
-                      </ui:ForEach.Body>
-                    </ui:ForEach>
-                  </Sequence>
-                </Sequence>
-              </FlowStep>
-            </FlowStep.Next>
-          </FlowStep>
-        </FlowStep.Next>
-      </FlowStep>
-    </Flowchart.StartNode>
+                </ActivityAction>
+              </ui:ExcelApplicationScope.Body>
+            </ui:ExcelApplicationScope>
+          </Sequence>
+        </Sequence>
+      </Sequence>
+    </FlowStep>
     <x:Reference>__ReferenceID0</x:Reference>
+    <FlowStep sap2010:WorkflowViewState.IdRef="FlowStep_5">
+      <Sequence DisplayName="nupkgダウンロード" sap2010:WorkflowViewState.IdRef="Sequence_52">
+        <Sequence.Variables>
+          <Variable x:TypeArguments="njl:JArray" Name="processes" />
+        </Sequence.Variables>
+        <Sequence sap2010:Annotation.AnnotationText="パッケージ名とバージョンの一覧が必要なので、Process一覧をOrchから取得。" DisplayName="サーバから、Process一覧取得" sap2010:WorkflowViewState.IdRef="Sequence_54">
+          <Sequence.Variables>
+            <Variable x:TypeArguments="x:String" Name="processesStr" />
+            <Variable x:TypeArguments="njl:JObject" Name="processesObj" />
+          </Sequence.Variables>
+          <ui:HttpClient Body="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" ResourcePath="{x:Null}" StatusCode="{x:Null}" Username="{x:Null}" AcceptFormat="JSON" BodyFormat="application/xml" DisplayName="HTTP Request" EndPoint="[servername+ &quot;/odata/Releases&quot;]" sap2010:WorkflowViewState.IdRef="HttpClient_6" Method="GET" Result="[processesStr]" TimeoutMS="30000">
+            <ui:HttpClient.Attachments>
+              <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+            </ui:HttpClient.Attachments>
+            <ui:HttpClient.Headers>
+              <InArgument x:TypeArguments="x:String" x:Key="Authorization">["Bearer " + token]</InArgument>
+            </ui:HttpClient.Headers>
+            <ui:HttpClient.Parameters>
+              <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+            </ui:HttpClient.Parameters>
+            <ui:HttpClient.UrlSegments>
+              <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+            </ui:HttpClient.UrlSegments>
+          </ui:HttpClient>
+          <ui:DeserializeJson x:TypeArguments="njl:JObject" DisplayName="Deserialize json" sap2010:WorkflowViewState.IdRef="DeserializeJson`1_13" JsonObject="[processesObj]" JsonString="[processesStr]" />
+          <ui:DeserializeJsonArray DisplayName="Deserialize json array" sap2010:WorkflowViewState.IdRef="DeserializeJsonArray_3" JsonArray="[processes]" JsonString="[processesObj(&quot;value&quot;).ToString]" />
+        </Sequence>
+        <Sequence DisplayName="プロセス一つ一つ、ダウンロードする処理" sap2010:WorkflowViewState.IdRef="Sequence_66">
+          <Sequence.Variables>
+            <Variable x:TypeArguments="sd:DataTable" Name="outputDataTable" />
+            <Variable x:TypeArguments="ui:GenericValue" Name="packageName" />
+            <Variable x:TypeArguments="ui:GenericValue" Name="version" />
+          </Sequence.Variables>
+          <ui:ForEach x:TypeArguments="njl:JObject" DisplayName="For each" sap2010:WorkflowViewState.IdRef="ForEach`1_5" Values="[processes]">
+            <ui:ForEach.Body>
+              <ActivityAction x:TypeArguments="njl:JObject">
+                <ActivityAction.Argument>
+                  <DelegateInArgument x:TypeArguments="njl:JObject" Name="item" />
+                </ActivityAction.Argument>
+                <Sequence sap2010:Annotation.AnnotationText="パッケージ名とバージョンからURLを生成し、そこにアクセスして、データをダウンロード。" DisplayName="for sequence" sap2010:WorkflowViewState.IdRef="Sequence_62">
+                  <Sequence.Variables>
+                    <Variable x:TypeArguments="ui:GenericValue" Name="totalExecutionTimeInSeconds" />
+                    <Variable x:TypeArguments="njl:JObject" Name="rawMessage" />
+                  </Sequence.Variables>
+                  <Assign sap2010:WorkflowViewState.IdRef="Assign_48">
+                    <Assign.To>
+                      <OutArgument x:TypeArguments="ui:GenericValue">[packageName]</OutArgument>
+                    </Assign.To>
+                    <Assign.Value>
+                      <InArgument x:TypeArguments="ui:GenericValue">[item("ProcessKey").ToString]</InArgument>
+                    </Assign.Value>
+                  </Assign>
+                  <ui:CommentOut DisplayName="encodeはいらないっぽい" sap2010:WorkflowViewState.IdRef="CommentOut_7">
+                    <ui:CommentOut.Body>
+                      <Sequence DisplayName="Ignored Activities" sap2010:WorkflowViewState.IdRef="Sequence_71">
+                        <Assign sap2010:WorkflowViewState.IdRef="Assign_50">
+                          <Assign.To>
+                            <OutArgument x:TypeArguments="ui:GenericValue">[packageName]</OutArgument>
+                          </Assign.To>
+                          <Assign.Value>
+                            <InArgument x:TypeArguments="ui:GenericValue">[system.Web.HttpUtility.htmldecode(packageName)]</InArgument>
+                          </Assign.Value>
+                        </Assign>
+                      </Sequence>
+                    </ui:CommentOut.Body>
+                  </ui:CommentOut>
+                  <Assign sap2010:WorkflowViewState.IdRef="Assign_49">
+                    <Assign.To>
+                      <OutArgument x:TypeArguments="ui:GenericValue">[version]</OutArgument>
+                    </Assign.To>
+                    <Assign.Value>
+                      <InArgument x:TypeArguments="ui:GenericValue">[item("ProcessVersion").ToString]</InArgument>
+                    </Assign.Value>
+                  </Assign>
+                  <ui:HttpClient Body="{x:Null}" ConsumerKey="{x:Null}" ConsumerSecret="{x:Null}" ContinueOnError="{x:Null}" OAuth1Token="{x:Null}" OAuth1TokenSecret="{x:Null}" OAuth2Token="{x:Null}" Password="{x:Null}" Result="{x:Null}" StatusCode="{x:Null}" Username="{x:Null}" AcceptFormat="ANY" BodyFormat="application/xml" DisplayName="HTTP Request" EndPoint="[servername+ &quot;/nuget/Feed/default/Packages(Id='&quot; + packageName +  &quot;',Version='&quot; + version +   &quot;')/Download&quot;]" sap2010:WorkflowViewState.IdRef="HttpClient_7" Method="GET" ResourcePath="[basedir+&quot;/&quot;+packageName+&quot;.&quot;+version+&quot;.nupkg&quot;]" TimeoutMS="6000">
+                    <ui:HttpClient.Attachments>
+                      <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+                    </ui:HttpClient.Attachments>
+                    <ui:HttpClient.Headers>
+                      <InArgument x:TypeArguments="x:String" x:Key="Authorization">["Bearer " + token]</InArgument>
+                    </ui:HttpClient.Headers>
+                    <ui:HttpClient.Parameters>
+                      <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+                    </ui:HttpClient.Parameters>
+                    <ui:HttpClient.UrlSegments>
+                      <scg:Dictionary x:TypeArguments="x:String, InArgument(x:String)" />
+                    </ui:HttpClient.UrlSegments>
+                  </ui:HttpClient>
+                </Sequence>
+              </ActivityAction>
+            </ui:ForEach.Body>
+          </ui:ForEach>
+        </Sequence>
+      </Sequence>
+    </FlowStep>
     <x:Reference>__ReferenceID1</x:Reference>
-    <x:Reference>__ReferenceID2</x:Reference>
-    <sads:DebugSymbol.Symbol>dylaOlxnaXRcVWlQYXRoTG9nRG93bmxvYWRQcm9qZWN0XE1haW4ueGFtbJoBSAPIAw8CAQFQCbYBFAMBiwG5AQ3aAhgCASndAhG9AxwCAQJWC44BFgMBogGPAQu1ARYDAYwBvQEP2QEaAgF32gEP2QIaAgEq4gIT9wIeAgEX+AITvAMeAgEDWT1ZQwMBowFbDXwYAwG4AX0NhAESAwGtAYUBDYUBygEDAagBhgENjQEWAwGkAZABDZ0BHQMBmwGeAQ2kAR0DAZoBpQENpQHOAQMBlQGmAQ20ARIDAY0BwgERzwEhAwGCAdABEdYBIQMBgQHXARHXAc8BAgF82AER2AHVAQIBeN0BQN0BVQIBK98BEd8BtwMCAXLgARG/Ah4CAUHAAhHYAhwCASznAhX0AiUCASH1AhX1AtcBAgEc9gIV9gLeAQIBGPsCRPsCWQIBBIEDFbsDIgIBBVwPexoDAbkBfXJ9fgMBrgF/EYIBHAMBsAGFAbgBhQHHAQMBqwGFAaABhQGsAQMBqQGLATiLAWcDAacBiAE5iAFFAwGlAZABowSQAaoEAwGhAZABogKQAc0CAwGgAZABigSQAZgEAwGeAZABkAOQAcUDAwGcAaUBvQGlAcsBAwGYAaUBoAGlAbEBAwGWAaYBG6YBSwMBjgGoARGoAXUDAZMBqwERsgEaAwGPAcoBTMoBWwMBigHCAfoDwgGBBAMBiQHHAVLHAWUDAYcBwgHiA8IB7wMDAYUBwgHyAsIBngMDAYMB1wG/AdcBzAECAX/XAaMB1wGzAQIBfdgBkgHYAZoBAgF62AGmAdgB0gECAXnfAdgC3wGdAwIBdt8B2AHfAdsBAgF13wHmAd8B+QECAXPgAYcB4AGPAQIBceYBF7wCIgIBQsECE8sCHgIBNswCE9cCLgIBLecCgATnAocEAgEo7AJW7AJpAgEm5wLlA+cC9QMCASTnAvYC5wKhAwIBIvUCxAH1AtQBAgEf9QKoAfUCuAECAR32ApYB9gKjAQIBGvYCrwH2AtsBAgEZgQOLAYEDmAECARaHAxu4AyYCAQZeE2UeAwHBAW0XdyIDAboBgAETgAHjAQMBtAGBAROBAZMBAwGxAagBIqgBSAMBlAGwATywAV4DAZIBrQE9rQFEAwGQAesBGfgBJAIBZ/kBGbsCHgIBQ8UCFcUCrwECATzGAhXKAhoCATfMAq4BzAK8AQIBNNICGdQCJAIBLowDHZMDJgIBEpQDHaEDLQIBEaIDHakDJgIBDaoDHbcDLQIBB18VYygDAcUBZBVklQEDAcIBbhl1IgMBvQF2GXalAQMBuwGAAZwBgAGvAQMBtwGAAWaAAXUDAbUBgQGBAYEBkAEDAbIB7wEb9gEkAgFt9wEb9wHcAQIBaPkBJ/kBbQIBRPsBHZACKAIBWpMCHbkCKAIBRcUCRcUCWQIBP8UCjgHFApwBAgE9xgIjxgI3AgE4yAIZyAKHAQIBOtMCG9MC1AECAS+RA0+RA2wCARWOA1COA10CAROnA0+nA3ACARCkA1CkA1kCAQ6qA5AFqgOWBQIBDKoDzQSqA4UFAgELrwNerwNxAgEJqgP3AqoDgwQCAQhhQWFOAwHHAV9GX1ADAcYBZIMBZJIBAwHDAXNFc0oDAcABcEZwUAMBvgF2hgF2ogEDAbwB9AFG9AFjAgFw8QFH8QFWAgFu9wHIAfcB2QECAWv3Aa4B9wG8AQIBaf8BH4YCKAIBY4cCH44CKAIBX48CH48CowQCAVuXAh+eAigCAVafAh+4AiQCAUbIAm/IAoQBAgE70wLNAdMC0QECATPTAkvTAl4CATHTArcB0wK/AQIBMIQCTIQCfwIBZoECTYECVgIBZIwCUYwChQECAWKJAlKJAm8CAWCPAsMDjwLWAwIBXY8CSo8CuAMCAVycAkucAoMBAgFZmQJMmQJaAgFXnwItnwI9AgFHoQIjtgIuAgFJpQIlrAIuAgFSrQIltAIuAgFOtQIltQKpBAIBSqoCUqoChQECAVWnAlOnAlwCAVOyAleyAlwCAVGvAlivAnUCAU+1AskDtQLcAwIBTLUCULUCvgMCAUs=</sads:DebugSymbol.Symbol>
+    <sads:DebugSymbol.Symbol>dylaOlxnaXRcVWlQYXRoTG9nRG93bmxvYWRQcm9qZWN0XE1haW4ueGFtbGpIA7UEDwIBAVAJvgEUAgFGwQENqgIYAgECVguWARYCAV2XAQu9ARYCAUfGAQ/cARoCATLdAQ/dAZEDAgEt3gEPjQIaAgEXjgIPqQIaAgEDWT1ZQwIBXlsNfBgCAXd9DYQBEgIBbIUBDYUBygECAWeGAQ2NARYCAWOOAQ2VARYCAV+YAQ2lAR0CAVamAQ2sAR0CAVWtAQ2tAc4BAgFQrgENvAESAgFIywER2AEhAgE+2QER2QHTAQIBOdoBEdoB2gECATXbARHbAbcBAgEz3QHWAt0B9wICATHdAdYB3QHZAQIBMN0B5AHdAfcBAgEu4wERjAIeAgEYkAJAkAJPAgEEkgIRnAIcAgENnQIRqAIsAgEFXA97GgIBeH1yfX4CAW1/EYIBHAIBb4UBuAGFAccBAgFqhQGgAYUBrAECAWiLATiLAWcCAWaIATmIAUUCAWSTAT+TAWsCAWKQAUCQAUkCAWCYAaMEmAGqBAIBXJgBogKYAc0CAgFbmAGKBJgBmAQCAVmYAZADmAHFAwIBV60BvQGtAcsBAgFTrQGgAa0BsQECAVGuARuuAUsCAUmwARGwAXUCAU6zARG6ARoCAUrLAfwDywGDBAIBRdABUtABZQIBQ8sB4QPLAfEDAgFBywHyAssBnQMCAT/ZAcAB2QHQAQIBPNkBpAHZAbQBAgE62gGSAdoBnwECATfaAasB2gHXAQIBNtsBf9sBtAECATTjAYcB4wGUAQIBLOkBF4kCIgIBGZYCE5YCwwECAROXAhObAhgCAQ6dAqwBnQLQAQIBDKMCF6UCIgIBBl4TZR4DAYABbRd3IgIBeYABE4AB4wECAXOBAROBAawBAgFwsAEisAFIAgFPuAE8uAFeAgFNtQE9tQFEAgFL7wEZ7wGaAQIBKvABGfcBIgIBJvgBGf8BIgIBIoACGYcCIgIBHogCGYgC1AECARqWAkOWAlcCARWWAowBlgKwAQIBFJcCIZcCNQIBD5kCF5kClAECARGkAhmkAtIBAgEHXxVjKAMBhAFkFWStAQMBgQFuGXUiAgF8dhl2pQECAXqAAZwBgAGvAQIBdoABZoABdQIBdIEBgQGBAakBAgFx7wGGAe8BlwECASv1AUv1AWgCASnyAUzyAVkCASf9AUv9AWwCASX6AUz6AVUCASOFAkuFAmICASGCAkyCAlkCAR+IAnSIAocBAgEciAJEiAJpAgEbmQJtmQKRAQIBEqQCywGkAs8BAgELpAJJpAJcAgEJpAK1AaQCvQECAQhhQWFOAwGGAV9GX1ADAYUBZIMBZKoBAwGCAXNFc0oCAX9wRnBQAgF9doYBdqIBAgF7</sads:DebugSymbol.Symbol>
   </Flowchart>
   <sap2010:WorkflowViewState.ViewStateManager>
     <sap2010:ViewStateManager>
@@ -467,11 +576,19 @@
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
       <sap2010:ViewStateData Id="Assign_45" sap:VirtualizedContainerService.HintSize="314,60" />
-      <sap2010:ViewStateData Id="LogMessage_7" sap:VirtualizedContainerService.HintSize="314,91" />
-      <sap2010:ViewStateData Id="Sequence_47" sap:VirtualizedContainerService.HintSize="336,312">
+      <sap2010:ViewStateData Id="LogMessage_7" sap:VirtualizedContainerService.HintSize="314,91">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="Sequence_47" sap:VirtualizedContainerService.HintSize="200,51">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">False</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
@@ -483,16 +600,16 @@
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="TryCatch_3" sap:VirtualizedContainerService.HintSize="200,123">
+      <sap2010:ViewStateData Id="TryCatch_3" sap:VirtualizedContainerService.HintSize="418,546">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
-            <x:Boolean x:Key="IsExpanded">False</x:Boolean>
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
             <x:Boolean x:Key="IsPinned">False</x:Boolean>
             <x:Boolean x:Key="IsAnnotationDocked">True</x:Boolean>
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="Sequence_48" sap:VirtualizedContainerService.HintSize="464,274">
+      <sap2010:ViewStateData Id="Sequence_48" sap:VirtualizedContainerService.HintSize="464,697">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">True</x:Boolean>
@@ -536,7 +653,8 @@
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
       <sap2010:ViewStateData Id="Assign_46" sap:VirtualizedContainerService.HintSize="464,60" />
-      <sap2010:ViewStateData Id="Sequence_49" sap:VirtualizedContainerService.HintSize="489,1169">
+      <sap2010:ViewStateData Id="Assign_54" sap:VirtualizedContainerService.HintSize="464,60" />
+      <sap2010:ViewStateData Id="Sequence_49" sap:VirtualizedContainerService.HintSize="489,1692">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">True</x:Boolean>
@@ -553,7 +671,7 @@
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="CommentOut_2" sap:VirtualizedContainerService.HintSize="467,51">
+      <sap2010:ViewStateData Id="CommentOut_2" sap:VirtualizedContainerService.HintSize="467,52">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">False</x:Boolean>
@@ -571,7 +689,7 @@
       </sap2010:ViewStateData>
       <sap2010:ViewStateData Id="Throw_3" sap:VirtualizedContainerService.HintSize="200,22" />
       <sap2010:ViewStateData Id="Assign_47" sap:VirtualizedContainerService.HintSize="242,60" />
-      <sap2010:ViewStateData Id="If_14" sap:VirtualizedContainerService.HintSize="467,208">
+      <sap2010:ViewStateData Id="If_14" sap:VirtualizedContainerService.HintSize="467,210">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">True</x:Boolean>
@@ -579,7 +697,7 @@
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="Sequence_50" sap:VirtualizedContainerService.HintSize="489,612">
+      <sap2010:ViewStateData Id="Sequence_50" sap:VirtualizedContainerService.HintSize="489,616">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">True</x:Boolean>
@@ -593,6 +711,135 @@
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">False</x:Boolean>
             <x:Boolean x:Key="IsPinned">False</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="HttpClient_8" sap:VirtualizedContainerService.HintSize="314,22" />
+      <sap2010:ViewStateData Id="DeserializeJson`1_14" sap:VirtualizedContainerService.HintSize="314,60">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">False</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="DeserializeJsonArray_4" sap:VirtualizedContainerService.HintSize="314,60">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">False</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="LogMessage_10" sap:VirtualizedContainerService.HintSize="314,91" />
+      <sap2010:ViewStateData Id="Sequence_72" sap:VirtualizedContainerService.HintSize="508,519">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+            <x:Boolean x:Key="IsAnnotationDocked">True</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="GenerateDataTable_4" sap:VirtualizedContainerService.HintSize="508,64">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsAnnotationDocked">True</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="LogMessage_9" sap:VirtualizedContainerService.HintSize="314,91" />
+      <sap2010:ViewStateData Id="Assign_51" sap:VirtualizedContainerService.HintSize="314,60" />
+      <sap2010:ViewStateData Id="Assign_52" sap:VirtualizedContainerService.HintSize="314,60" />
+      <sap2010:ViewStateData Id="Assign_53" sap:VirtualizedContainerService.HintSize="314,60" />
+      <sap2010:ViewStateData Id="AddDataRow_6" sap:VirtualizedContainerService.HintSize="314,22" />
+      <sap2010:ViewStateData Id="Sequence_73" sap:VirtualizedContainerService.HintSize="336,604">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+            <x:Boolean x:Key="IsAnnotationDocked">True</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="ForEach`1_6" sap:VirtualizedContainerService.HintSize="352,738">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="Sequence_74" sap:VirtualizedContainerService.HintSize="508,862">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="PathExists_3" sap:VirtualizedContainerService.HintSize="464,89" />
+      <sap2010:ViewStateData Id="Delete_3" sap:VirtualizedContainerService.HintSize="200,22" />
+      <sap2010:ViewStateData Id="If_15" sap:VirtualizedContainerService.HintSize="464,208">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="Sequence_75" sap:VirtualizedContainerService.HintSize="486,461">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="ExcelWriteRange_3" sap:VirtualizedContainerService.HintSize="314,87" />
+      <sap2010:ViewStateData Id="Sequence_76" sap:VirtualizedContainerService.HintSize="336,211">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="ExcelApplicationScope_3" sap:VirtualizedContainerService.HintSize="486,320">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="Sequence_77" sap:VirtualizedContainerService.HintSize="508,945">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="Sequence_78" sap:VirtualizedContainerService.HintSize="200,51">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="FlowStep_6">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <av:Point x:Key="ShapeLocation">40,334.5</av:Point>
+            <av:Size x:Key="ShapeSize">200,51</av:Size>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="FlowStep_2">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <av:Point x:Key="ShapeLocation">200,134.5</av:Point>
+            <av:Size x:Key="ShapeSize">200,51</av:Size>
+            <av:PointCollection x:Key="ConnectorLocation">300,185.5 300,304.5 140,304.5 140,334.5</av:PointCollection>
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
@@ -622,7 +869,7 @@
       </sap2010:ViewStateData>
       <sap2010:ViewStateData Id="DeserializeJson`1_9" sap:VirtualizedContainerService.HintSize="314,60" />
       <sap2010:ViewStateData Id="DeserializeJsonArray_2" sap:VirtualizedContainerService.HintSize="314,60" />
-      <sap2010:ViewStateData Id="Sequence_36" sap:VirtualizedContainerService.HintSize="396,51">
+      <sap2010:ViewStateData Id="Sequence_36" sap:VirtualizedContainerService.HintSize="530,51">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">False</x:Boolean>
@@ -630,7 +877,7 @@
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="GenerateDataTable_3" sap:VirtualizedContainerService.HintSize="374,64">
+      <sap2010:ViewStateData Id="GenerateDataTable_3" sap:VirtualizedContainerService.HintSize="508,64">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsAnnotationDocked">True</x:Boolean>
@@ -700,7 +947,7 @@
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="ForEach`1_4" sap:VirtualizedContainerService.HintSize="374,633">
+      <sap2010:ViewStateData Id="ForEach`1_4" sap:VirtualizedContainerService.HintSize="508,633">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">True</x:Boolean>
@@ -708,17 +955,17 @@
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="PathExists_2" sap:VirtualizedContainerService.HintSize="314,89" />
+      <sap2010:ViewStateData Id="PathExists_2" sap:VirtualizedContainerService.HintSize="464,89" />
       <sap2010:ViewStateData Id="Delete_2" sap:VirtualizedContainerService.HintSize="200,22" />
-      <sap2010:ViewStateData Id="If_12" sap:VirtualizedContainerService.HintSize="314,51">
+      <sap2010:ViewStateData Id="If_12" sap:VirtualizedContainerService.HintSize="464,208">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
-            <x:Boolean x:Key="IsExpanded">False</x:Boolean>
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
             <x:Boolean x:Key="IsPinned">False</x:Boolean>
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="Sequence_42" sap:VirtualizedContainerService.HintSize="336,304">
+      <sap2010:ViewStateData Id="Sequence_42" sap:VirtualizedContainerService.HintSize="486,461">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">True</x:Boolean>
@@ -734,22 +981,22 @@
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="ExcelApplicationScope_2" sap:VirtualizedContainerService.HintSize="336,51">
+      <sap2010:ViewStateData Id="ExcelApplicationScope_2" sap:VirtualizedContainerService.HintSize="486,320">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
-            <x:Boolean x:Key="IsExpanded">False</x:Boolean>
+            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
             <x:Boolean x:Key="IsPinned">False</x:Boolean>
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="Sequence_53" sap:VirtualizedContainerService.HintSize="374,519">
+      <sap2010:ViewStateData Id="Sequence_53" sap:VirtualizedContainerService.HintSize="508,945">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">True</x:Boolean>
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="Sequence_44" sap:VirtualizedContainerService.HintSize="396,1420">
+      <sap2010:ViewStateData Id="Sequence_44" sap:VirtualizedContainerService.HintSize="530,1846">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">True</x:Boolean>
@@ -761,6 +1008,14 @@
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+      </sap2010:ViewStateData>
+      <sap2010:ViewStateData Id="FlowStep_1">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <av:Point x:Key="ShapeLocation">40,234.5</av:Point>
+            <av:Size x:Key="ShapeSize">200,51</av:Size>
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
@@ -844,26 +1099,8 @@
       <sap2010:ViewStateData Id="FlowStep_5">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
-            <av:Point x:Key="ShapeLocation">310,264.5</av:Point>
+            <av:Point x:Key="ShapeLocation">290,334.5</av:Point>
             <av:Size x:Key="ShapeSize">200,51</av:Size>
-          </scg:Dictionary>
-        </sap:WorkflowViewStateService.ViewState>
-      </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="FlowStep_1">
-        <sap:WorkflowViewStateService.ViewState>
-          <scg:Dictionary x:TypeArguments="x:String, x:Object">
-            <av:Point x:Key="ShapeLocation">10,264.5</av:Point>
-            <av:Size x:Key="ShapeSize">200,51</av:Size>
-            <av:PointCollection x:Key="ConnectorLocation">210,290 240,290 240,234.5 410,234.5 410,264.5</av:PointCollection>
-          </scg:Dictionary>
-        </sap:WorkflowViewStateService.ViewState>
-      </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="FlowStep_2">
-        <sap:WorkflowViewStateService.ViewState>
-          <scg:Dictionary x:TypeArguments="x:String, x:Object">
-            <av:Point x:Key="ShapeLocation">200,134.5</av:Point>
-            <av:Size x:Key="ShapeSize">200,51</av:Size>
-            <av:PointCollection x:Key="ConnectorLocation">300,185.5 300,215.5 110,215.5 110,264.5</av:PointCollection>
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>

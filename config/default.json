@@ -6,5 +6,8 @@
   },
   "serverinfo": {
     "servername": "http://demo.uipath.com"
+  },
+  "clientinfo": {
+    "basedir": "c:/temp"
   }
 }
