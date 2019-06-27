@@ -1,6 +1,6 @@
 {
-  "name": "LogDownloadProject",
-  "description": "Log Download Project",
+  "name": "OrchestratorUtilitiesProject",
+  "description": "Orchestrator Utilities Project",
   "main": "Main.xaml",
   "dependencies": {
     "UiPath.System.Activities": "[18.4.2]",
