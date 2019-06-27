@@ -1,6 +1,6 @@
 {
-  "name": "LogDownloadProject",
-  "description": "Log Download Project",
+  "name": "OrchestratorUtilitiesProject",
+  "description": "Orchestrator Utilities Project",
   "main": "Main.xaml",
   "dependencies": {
     "UiPath.System.Activities": "[18.4.2]",
@@ -10,7 +10,7 @@
   },
   "schemaVersion": "3.2",
   "studioVersion": "18.1.4.0",
-  "projectVersion": "1.0.7103.15333",
+  "projectVersion": "1.0.7103.16524",
   "runtimeOptions": {
     "autoDispose": false,
     "excludedLoggedData": [

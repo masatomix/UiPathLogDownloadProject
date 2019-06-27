@@ -331,3 +331,4 @@ ASALocalRun/
 
 
 config/local*.json
+.local/
