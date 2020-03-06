@@ -89,7 +89,7 @@
           <av:PointCollection x:Key="ConnectorLocation">150,430.5 150,464.5</av:PointCollection>
         </scg:Dictionary>
       </sap:WorkflowViewStateService.ViewState>
-      <Sequence DisplayName="ロボット利用状況 ダウンロード" sap:VirtualizedContainerService.HintSize="1037,3150" sap2010:WorkflowViewState.IdRef="Sequence_45">
+      <Sequence DisplayName="ロボット利用状況 ダウンロード" sap:VirtualizedContainerService.HintSize="1037,3154" sap2010:WorkflowViewState.IdRef="Sequence_45">
         <Sequence.Variables>
           <Variable x:TypeArguments="njl:JArray" Name="logs" />
         </Sequence.Variables>
@@ -178,7 +178,7 @@
           <ui:DeserializeJson x:TypeArguments="njl:JObject" DisplayName="Deserialize json" sap:VirtualizedContainerService.HintSize="484,60" sap2010:WorkflowViewState.IdRef="DeserializeJson`1_9" JsonObject="[robotLogsObj]" JsonString="[robotLogs]" />
           <ui:DeserializeJsonArray DisplayName="Deserialize json array" sap:VirtualizedContainerService.HintSize="484,60" sap2010:WorkflowViewState.IdRef="DeserializeJsonArray_2" JsonArray="[logs]" JsonString="[robotLogsObj(&quot;value&quot;).ToString]" />
         </Sequence>
-        <Sequence DisplayName="Excel 出力処理" sap:VirtualizedContainerService.HintSize="995,2427" sap2010:WorkflowViewState.IdRef="Sequence_44">
+        <Sequence DisplayName="Excel 出力処理" sap:VirtualizedContainerService.HintSize="995,2431" sap2010:WorkflowViewState.IdRef="Sequence_44">
           <Sequence.Variables>
             <Variable x:TypeArguments="sd:DataTable" Name="outputDataTable" />
             <Variable x:TypeArguments="x:String" Default="実行ログ.xlsx" Name="outputFile" />
@@ -196,13 +196,13 @@
               </scg:Dictionary>
             </sap:WorkflowViewStateService.ViewState>
           </ui:GenerateDataTable>
-          <ui:ForEach x:TypeArguments="njl:JObject" CurrentIndex="{x:Null}" DisplayName="For each" sap:VirtualizedContainerService.HintSize="953,1316" sap2010:WorkflowViewState.IdRef="ForEach`1_4" Values="[logs]">
+          <ui:ForEach x:TypeArguments="njl:JObject" CurrentIndex="{x:Null}" DisplayName="For each" sap:VirtualizedContainerService.HintSize="953,1320" sap2010:WorkflowViewState.IdRef="ForEach`1_4" Values="[logs]">
             <ui:ForEach.Body>
               <ActivityAction x:TypeArguments="njl:JObject">
                 <ActivityAction.Argument>
                   <DelegateInArgument x:TypeArguments="njl:JObject" Name="item" />
                 </ActivityAction.Argument>
-                <Sequence DisplayName="for sequence" sap:VirtualizedContainerService.HintSize="917,1182" sap2010:WorkflowViewState.IdRef="Sequence_41">
+                <Sequence DisplayName="for sequence" sap:VirtualizedContainerService.HintSize="917,1186" sap2010:WorkflowViewState.IdRef="Sequence_41">
                   <Sequence.Variables>
                     <Variable x:TypeArguments="ui:GenericValue" Name="totalExecutionTimeInSeconds" />
                     <Variable x:TypeArguments="njl:JObject" Name="rawMessage" />
@@ -232,7 +232,7 @@
                     </Assign>
                     <ui:DeserializeJson x:TypeArguments="njl:JObject" DisplayName="Deserialize json" sap:VirtualizedContainerService.HintSize="334,60" sap2010:WorkflowViewState.IdRef="DeserializeJson`1_10" JsonObject="[rawMessage]" JsonString="[rawMessageStr]" />
                   </Sequence>
-                  <If Condition="[rawMessage(&quot;totalExecutionTimeInSeconds&quot;) isnot  Nothing]" DisplayName="If totalExecutionTimeInSeconds があったら終了ログとして追加" sap:VirtualizedContainerService.HintSize="875,798" sap2010:WorkflowViewState.IdRef="If_11">
+                  <If Condition="[rawMessage(&quot;totalExecutionTimeInSeconds&quot;) isnot  Nothing]" DisplayName="If totalExecutionTimeInSeconds があったら終了ログとして追加" sap:VirtualizedContainerService.HintSize="875,802" sap2010:WorkflowViewState.IdRef="If_11">
                     <sap:WorkflowViewStateService.ViewState>
                       <scg:Dictionary x:TypeArguments="x:String, x:Object">
                         <x:Boolean x:Key="IsExpanded">True</x:Boolean>
@@ -270,7 +270,7 @@
                       </Sequence>
                     </If.Then>
                     <If.Else>
-                      <Sequence DisplayName="行追加処理" sap:VirtualizedContainerService.HintSize="526,650" sap2010:WorkflowViewState.IdRef="Sequence_40">
+                      <Sequence DisplayName="行追加処理" sap:VirtualizedContainerService.HintSize="526,654" sap2010:WorkflowViewState.IdRef="Sequence_40">
                         <Sequence.Variables>
                           <Variable x:TypeArguments="x:Boolean" Name="isMatchStart" />
                         </Sequence.Variables>
@@ -285,10 +285,10 @@
                             <OutArgument x:TypeArguments="x:Boolean">[isMatchStart]</OutArgument>
                           </Assign.To>
                           <Assign.Value>
-                            <InArgument x:TypeArguments="x:Boolean">[item("Message").ToString.EndsWith("execution started")]</InArgument>
+                            <InArgument x:TypeArguments="x:Boolean">[item("Message").ToString.EndsWith("execution started") OrElse item("Message").ToString.Contains("の実行を開始しました")]</InArgument>
                           </Assign.Value>
                         </Assign>
-                        <If Condition="[isMatchStart]" DisplayName="If Messageが execution started  で終了するなら、開始ログとして追加。" sap:VirtualizedContainerService.HintSize="484,458" sap2010:WorkflowViewState.IdRef="If_10">
+                        <If Condition="[isMatchStart]" DisplayName="If Messageが execution started  で終了するなら、開始ログとして追加。" sap:VirtualizedContainerService.HintSize="484,462" sap2010:WorkflowViewState.IdRef="If_10">
                           <sap:WorkflowViewStateService.ViewState>
                             <scg:Dictionary x:TypeArguments="x:String, x:Object">
                               <x:Boolean x:Key="IsExpanded">True</x:Boolean>
