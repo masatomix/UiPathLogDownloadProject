@@ -3,28 +3,34 @@
   "description": "Orchestrator Utilities Project",
   "main": "Main.xaml",
   "dependencies": {
+    "UiPath.Excel.Activities": "[2.5.1]",
     "UiPath.System.Activities": "[18.4.2]",
     "UiPath.UIAutomation.Activities": "[18.4.5]",
-    "UiPath.WebAPI.Activities": "[1.1.6479.13209]",
-    "UiPath.Excel.Activities": "[2.5.1]"
+    "UiPath.WebAPI.Activities": "[1.4.4]"
   },
-  "schemaVersion": "3.2",
-  "studioVersion": "18.1.4.0",
+  "webServices": [],
+  "schemaVersion": "4.0",
+  "studioVersion": "19.10.4.0",
   "projectVersion": "1.0.7117.21886",
   "runtimeOptions": {
     "autoDispose": false,
+    "isPausable": true,
+    "requiresUserInteraction": true,
+    "supportsPersistence": false,
     "excludedLoggedData": [
       "Private:*",
       "*password*"
-    ]
+    ],
+    "executionType": "Workflow"
   },
-  "projectType": "Workflow",
-  "libraryOptions": {
-    "includeOriginalXaml": false,
-    "privateWorkflows": []
+  "designOptions": {
+    "projectProfile": "Developement",
+    "outputType": "Process",
+    "libraryOptions": {
+      "includeOriginalXaml": false,
+      "privateWorkflows": []
+    },
+    "fileInfos": []
   },
-  "arguments": {
-    "input": [],
-    "output": []
-  }
+  "expressionLanguage": "VisualBasic"
 }
